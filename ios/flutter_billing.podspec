@@ -18,4 +18,3 @@ A flutter plugin to communicate with billing on iOS and Android.
   
   s.ios.deployment_target = '8.0'
 end
-
