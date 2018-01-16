@@ -12,3 +12,6 @@ flutter:
   plugin:
     androidPackage: com.lykhonis.flutterbilling
     pluginClass: BillingPlugin
+
+environment:
+  sdk: ">=1.8.0 <2.0.0"
