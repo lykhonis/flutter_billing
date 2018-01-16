@@ -48,7 +48,9 @@ class BillingRepository {
   Future<List<BillingProduct>> getProducts() {
     return synchronized(this, () async {
       if (_cachedProducts == null) {
-        _cachedProducts = await _billing.fetchProducts(<String>['my.product.id',]);
+        _cachedProducts = await _billing.fetchProducts(<String>[
+          'my.product.id',
+        ]);
       }
 
       return _cachedProducts;
