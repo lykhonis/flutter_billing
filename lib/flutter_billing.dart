@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+/// A single product that can be purchased by a user in app.
 class BillingProduct {
   BillingProduct({
     this.identifier,
@@ -18,14 +19,23 @@ class BillingProduct {
         assert(currency != null),
         assert(amount != null);
 
+  /// Unique product identifier.
   final String identifier;
-  final String price;
-  final String title;
-  final String description;
-  final String currency;
-  final int amount;
 
-  double get roundAmount => amount / 100;
+  /// Localized formatted product price including currency sign. e.g. $2.49.
+  final String price;
+
+  /// Localized product title.
+  final String title;
+
+  /// Localized product description.
+  final String description;
+
+  /// ISO 4217 currency code for price.
+  final String currency;
+
+  /// Price in 100s. e.g. $2.49 equals 249.
+  final int amount;
 
   @override
   bool operator ==(Object other) =>
@@ -55,6 +65,7 @@ class BillingProduct {
   }
 }
 
+/// Billing plugin to enable communication with billing API in iOS and Android.
 class Billing {
   const Billing._(MethodChannel channel)
       : assert(channel != null),
@@ -66,14 +77,28 @@ class Billing {
 
   final MethodChannel _channel;
 
+  /// Fetch purchased products.
+  ///
+  /// Returns a list of product identifiers that have been purchased.
   Future<List<String>> fetchPurchases() => _channel.invokeMethod('fetchPurchases');
 
+  /// Purchase a product.
+  ///
+  /// This would trigger platform UI to walk a user through steps of purchasing the product.
+  /// Returns updated list of product identifiers that have been purchased.
   Future<List<String>> purchase(String identifier) {
     assert(identifier != null);
 
     return _channel.invokeMethod('purchase', {'identifier': identifier});
   }
 
+  /// Fetch details of supplied product identifiers.
+  ///
+  /// Returns a list of products available to the app for a purchase.
+  ///
+  /// Note the behavior may differ from iOS and Android. Android most likely to throw in a case
+  /// of error, while iOS would return a list of only products that are available. In a case of
+  /// error, it would return simply empty list.
   Future<List<BillingProduct>> fetchProducts(List<String> identifiers) async {
     assert(identifiers != null);
 
