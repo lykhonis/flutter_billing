@@ -19,7 +19,7 @@ final Billing billing = new Billing();
 
 Request available products and details:
 ```dart
-final List<BillingProduct> skuDetails = await billing.fetchProducts(<String>[
+final List<BillingProduct> products = await billing.fetchProducts(<String>[
     'my.product.id',
 ]);
 ```
@@ -36,9 +36,10 @@ final List<String> purchases = await billing.purchase(productId);
 
 ## Tips
 
-Billing issues calls to App Store and Play Store accordingly. e.g. When fetch products are called more 
-than once it may request products from a Store and not cache. To prevent such situations one could use
-[synchronized](https://pub.dartlang.org/packages/synchronized) package and implement similar solution:
+Billing issues calls to App Store and Play Store accordingly. e.g. When fetch products is called more 
+than once it may request products from a Store multiple times ignoring a cache. In order to ensure products are
+fetched only once one could use [synchronized](https://pub.dartlang.org/packages/synchronized) package and implement
+similar solution:
 
 ```dart
 class BillingRepository {
