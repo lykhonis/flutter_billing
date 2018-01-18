@@ -1,5 +1,4 @@
 ## flutter_billing
-
 A plugin for [Flutter](https://flutter.io) that enables communication with billing API in 
 [iOS](https://developer.apple.com/in-app-purchase/) and 
 [Android](https://developer.android.com/google/play/billing/billing_integrate.html).
@@ -10,72 +9,53 @@ testing has been limited.
 [Pull Requests](https://github.com/VolodymyrLykhonis/flutter_billing/pulls) are welcome.
 
 ## Using
-Add `flutter_billing` as a dependency in `pubspec.yaml`.
+Add `flutter_billing: 0.1.0` as a dependency in `pubspec.yaml`.
 
 Create an instance of the plugin:
 ```dart
-final Billing billing = new Billing();
+final Billing billing = new Billing(onError: (e) {
+  // optionally handle exception
+});
 ```
 
-Request available products and details:
+Request available products for purchase:
 ```dart
-final List<BillingProduct> products = await billing.fetchProducts(<String>[
+final List<BillingProduct> products = await billing.getProducts(<String>[
     'my.product.id',
+    'my.other.product.id',
 ]);
 ```
-
-Request purchased products (each purchase is a product id):
+or
 ```dart
-final List<String> purchases = await billing.fetchPurchases();
-```
-
-Make a product purchase. It throws in a case of error or returns a list of purchased products on success:
-```dart
-final List<String> purchases = await billing.purchase(productId);
-```
-
-## Tips
-
-Billing issues calls to App Store and Play Store accordingly. e.g. When fetch products is called more 
-than once it may request products from a Store multiple times ignoring a cache. In order to ensure products are
-fetched only once one could use [synchronized](https://pub.dartlang.org/packages/synchronized) package and implement
-similar solution:
-
-```dart
-class BillingRepository {
-  final Billing _billing = new Billing();
-  List<BillingProduct> _cachedProducts;
-
-  Future<List<BillingProduct>> getProducts() {
-    return synchronized(this, () async {
-      if (_cachedProducts == null) {
-        _cachedProducts = await _billing.fetchProducts(<String>[
-          'my.product.id',
-        ]);
-      }
-
-      return _cachedProducts;
-    });
-  }
-
-  Future<BillingProduct> purchase(BillingProduct product) async {
-    final List<String> purchases = await _billing.purchase(product.identifier);
-    // update purchased products
-
-    return product;
-  }
-
-  Future<BillingProduct> get(String identifier) async {
-    final List<BillingProduct> products = await getProducts();
-
-    return products.firstWhere((_) => _.identifier == identifier, orElse: () => null);
-  }
+final BillingProduct product = await billing.getProduct('my.product.id');
+if (product != null) {
+  // success
+} else {
+  // something went wrong
 }
 ```
 
-## Limitations
+Request purchased products (each purchase is a product identifier):
+```dart
+final Set<String> purchases = await billing.getPurchases();
+```
 
-This is just an initial version of the plugin. There are still some limitiations:
+Check if a product is already purchased:
+```dart
+final bool purchased = purchases.contains('my.product.id');
+```
+or
+```dart
+final bool purchases = await billing.isPurchased('my.product.id');
+```
+
+Purchase a product:
+```dart
+final bool purchased = await billing.purchase(productId);
+```
+
+## Limitations
+This is just an initial version of the plugin. There are still some limitations:
 
 - iOS implementation is currently under testing
 - Only non-consumable in app products are supported
