@@ -7,7 +7,7 @@ homepage: http://vladimirlichonos.com
 dependencies:
   flutter:
     sdk: flutter
-  synchronized: 1.1.0
+  synchronized: ^1.1.0
 
 flutter:
   plugin:
