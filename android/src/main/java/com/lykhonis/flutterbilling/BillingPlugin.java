@@ -233,8 +233,6 @@ public final class BillingPlugin implements MethodCallHandler {
     final class BillingListener implements PurchasesUpdatedListener {
         @Override
         public void onPurchasesUpdated(int resultCode, List<Purchase> purchases) {
-            Log.d(TAG, "Purchases updated " + purchases + " with code " + resultCode);
-
             if (resultCode == BillingResponse.OK && purchases != null) {
                 final List<String> identifiers = getIdentifiers(purchases);
 
