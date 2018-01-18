@@ -189,18 +189,19 @@
     
     products = [response products];
     
-    NSMutableDictionary<NSString*, id>* allValues = [[NSMutableDictionary alloc] init];
+    NSMutableArray<NSDictionary*>* allValues = [[NSMutableArray alloc] init];
     [[response products] enumerateObjectsUsingBlock:^(SKProduct* product, NSUInteger idx, BOOL* stop) {
         [currencyFormatter setLocale:product.priceLocale];
 
         NSMutableDictionary<NSString*, id>* values = [[NSMutableDictionary alloc] init];
+        [values setObject:product.productIdentifier forKey:@"identifier"];
         [values setObject:[currencyFormatter stringFromNumber:product.price] forKey:@"price"];
         [values setObject:product.localizedTitle forKey:@"title"];
         [values setObject:product.localizedDescription forKey:@"description"];
         [values setObject:product.priceLocale.currencyCode forKey:@"currency"];
         [values setObject:product.price forKey:@"amount"];
         
-        [allValues setObject:values forKey:product.productIdentifier];
+        [allValues addObject:values];
     }];
 
     result(allValues);

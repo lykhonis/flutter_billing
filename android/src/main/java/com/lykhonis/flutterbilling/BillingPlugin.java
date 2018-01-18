@@ -102,17 +102,17 @@ public final class BillingPlugin implements MethodCallHandler {
                             @Override
                             public void onSkuDetailsResponse(int responseCode, List<SkuDetails> skuDetailsList) {
                                 if (responseCode == BillingResponse.OK) {
-                                    final Map<String, Map<String, Object>> products = new HashMap<>();
+                                    final List<Map<String, Object>> products = new ArrayList<>();
 
                                     for (SkuDetails details : skuDetailsList) {
                                         final Map<String, Object> product = new HashMap<>();
+                                        product.put("identifier", details.getSku());
                                         product.put("price", details.getPrice());
                                         product.put("title", details.getTitle());
                                         product.put("description", details.getDescription());
                                         product.put("currency", details.getPriceCurrencyCode());
                                         product.put("amount", details.getPriceAmountMicros() / 10_000L);
-
-                                        products.put(details.getSku(), product);
+                                        products.add(product);
                                     }
 
                                     result.success(products);
@@ -233,17 +233,21 @@ public final class BillingPlugin implements MethodCallHandler {
     final class BillingListener implements PurchasesUpdatedListener {
         @Override
         public void onPurchasesUpdated(int resultCode, List<Purchase> purchases) {
-            final List<String> identifiers = getIdentifiers(purchases);
+            Log.d(TAG, "Purchases updated " + purchases + " with code " + resultCode);
 
-            for (String identifier : identifiers) {
-                final Result result = pendingPurchaseRequests.remove(identifier);
-                if (result == null) continue;
+            if (resultCode == BillingResponse.OK && purchases != null) {
+                final List<String> identifiers = getIdentifiers(purchases);
 
-                if (resultCode == BillingResponse.OK) {
-                    result.success(identifiers);
-                } else {
-                    result.error("ERROR", "Failed to purchase an item with error " + result, null);
+                for (String identifier : identifiers) {
+                    final Result result = pendingPurchaseRequests.remove(identifier);
+                    if (result != null) result.success(identifiers);
                 }
+            } else {
+                for (Result result : pendingPurchaseRequests.values()) {
+                    result.error("ERROR", "Failed to purchase an item with error " + resultCode, null);
+                }
+
+                pendingPurchaseRequests.clear();
             }
         }
     }
