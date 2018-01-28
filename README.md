@@ -9,7 +9,7 @@ testing has been limited.
 [Pull Requests](https://github.com/VolodymyrLykhonis/flutter_billing/pulls) are welcome.
 
 ## Using
-Add `flutter_billing: 0.1.0` as a dependency in `pubspec.yaml`.
+Add `flutter_billing: 0.1.1` as a dependency in `pubspec.yaml`.
 
 Create an instance of the plugin:
 ```dart
@@ -57,5 +57,4 @@ final bool purchased = await billing.purchase(productId);
 ## Limitations
 This is just an initial version of the plugin. There are still some limitations:
 
-- iOS implementation is currently under testing
 - Only non-consumable in app products are supported

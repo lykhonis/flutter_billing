@@ -6,7 +6,7 @@
 @property (atomic, retain) NSMutableDictionary<NSValue*, FlutterResult>* fetchProducts;
 @property (atomic, retain) NSMutableDictionary<SKPayment*, FlutterResult>* requestedPayments;
 @property (atomic, retain) NSArray<SKProduct*>* products;
-@property (atomic, retain) NSSet<NSString*>* purchases;
+@property (atomic, retain) NSMutableSet<NSString*>* purchases;
 @property (nonatomic, retain) FlutterMethodChannel* channel;
 
 @end
@@ -36,7 +36,7 @@
     self.fetchProducts = [[NSMutableDictionary alloc] init];
     self.requestedPayments = [[NSMutableDictionary alloc] init];
     self.products = [[NSArray alloc] init];
-    self.purchases = [[NSSet alloc] init];
+    self.purchases = [[NSMutableSet alloc] init];
     
     return self;
 }
@@ -98,7 +98,7 @@
 - (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
     NSArray<FlutterResult>* results = [NSArray arrayWithArray:fetchPurchases];
     [fetchPurchases removeAllObjects];
-    
+
     NSArray<NSString*>* productIdentifiers = [purchases allObjects];
     [results enumerateObjectsUsingBlock:^(FlutterResult result, NSUInteger idx, BOOL* stop) {
         result(productIdentifiers);
@@ -106,14 +106,14 @@
 }
 
 - (void)purchased:(NSArray<SKPaymentTransaction*>*)transactions {
-    NSArray<FlutterResult>* results = [[NSArray alloc] init];
+    NSMutableArray<FlutterResult>* results = [[NSMutableArray alloc] init];
     
     [transactions enumerateObjectsUsingBlock:^(SKPaymentTransaction* transaction, NSUInteger idx, BOOL* stop) {
-        [purchases setByAddingObject:transaction.payment.productIdentifier];
+        [purchases addObject:transaction.payment.productIdentifier];
         FlutterResult result = [requestedPayments objectForKey:transaction.payment];
         if (result != nil) {
             [requestedPayments removeObjectForKey:transaction.payment];
-            [results arrayByAddingObject:result];
+            [results addObject:result];
         }
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
     }];
@@ -128,7 +128,7 @@
     [transactions enumerateObjectsUsingBlock:^(SKPaymentTransaction* transaction, NSUInteger idx, BOOL* stop) {
         SKPaymentTransaction* original = transaction.originalTransaction;
         if (original != nil) {
-            [purchases setByAddingObject:original.payment.productIdentifier];
+            [purchases addObject:original.payment.productIdentifier];
         }
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
     }];
@@ -173,16 +173,19 @@
 }
 
 - (void)request:(SKRequest *)request didFailWithError:(NSError *)error {
-    FlutterResult result = [fetchProducts objectForKey:[NSValue valueWithNonretainedObject:request]];
+    NSValue* key = [NSValue valueWithNonretainedObject:request];
+    FlutterResult result = [fetchProducts objectForKey:key];
     if (result != nil) {
-        [fetchProducts removeObjectForKey:[NSValue valueWithNonretainedObject:request]];
+        [fetchProducts removeObjectForKey:key];
         result([FlutterError errorWithCode:@"ERROR" message:@"Failed to make IAP request!" details:nil]);
     }
 }
 
 - (void)productsRequest:(nonnull SKProductsRequest *)request didReceiveResponse:(nonnull SKProductsResponse *)response {
-    FlutterResult result = [fetchProducts objectForKey:[NSValue valueWithNonretainedObject:request]];
+    NSValue* key = [NSValue valueWithNonretainedObject:request];
+    FlutterResult result = [fetchProducts objectForKey:key];
     if (result == nil) return;
+    [fetchProducts removeObjectForKey:key];
     
     NSNumberFormatter* currencyFormatter = [[NSNumberFormatter alloc] init];
     [currencyFormatter setNumberStyle:NSNumberFormatterCurrencyStyle];
