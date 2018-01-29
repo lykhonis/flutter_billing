@@ -4,7 +4,7 @@ A plugin for [Flutter](https://flutter.io) that enables communication with billi
 [Android](https://developer.android.com/google/play/billing/billing_integrate.html).
 
 This plugin implements in app purchases rather than Android Pay or Apple Pay. Both
-Aplle and Google collect fees upon each successful transaction made using this plugin.
+Apple and Google collect fees upon each successful transaction made using this plugin.
 
 *Warning*: This plugin is still under development, some billing features are not available yet and
 testing has been limited.
