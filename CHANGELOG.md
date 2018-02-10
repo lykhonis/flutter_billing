@@ -1,3 +1,6 @@
+## [0.1.2] - iOS Simulator Support
+Skip a product if information is not fullfiled properly
+
 ## [0.1.1] - iOS Support
 Library is tested on iOS. Feature parity for both iOS and Android.
 
