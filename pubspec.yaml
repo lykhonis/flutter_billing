@@ -1,6 +1,6 @@
 name: flutter_billing
 description: A flutter plugin to communicate with billing on iOS and Android.
-version: 0.1.1
+version: 0.1.2
 author: Volodymyr Lykhonis <vladimirlichonos@gmail.com>
 homepage: http://vladimirlichonos.com
 
