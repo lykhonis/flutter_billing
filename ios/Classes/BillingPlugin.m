@@ -195,6 +195,14 @@
     NSMutableArray<NSDictionary*>* allValues = [[NSMutableArray alloc] init];
     [[response products] enumerateObjectsUsingBlock:^(SKProduct* product, NSUInteger idx, BOOL* stop) {
         [currencyFormatter setLocale:product.priceLocale];
+        
+        if (product.productIdentifier == nil ||
+            product.localizedTitle == nil ||
+            product.localizedDescription == nil ||
+            product.priceLocale == nil ||
+            product.price == nil) {
+            return;
+        }
 
         NSMutableDictionary<NSString*, id>* values = [[NSMutableDictionary alloc] init];
         [values setObject:product.productIdentifier forKey:@"identifier"];
@@ -203,7 +211,7 @@
         [values setObject:product.localizedDescription forKey:@"description"];
         [values setObject:product.priceLocale.currencyCode forKey:@"currency"];
         [values setObject:product.price forKey:@"amount"];
-        
+
         [allValues addObject:values];
     }];
 
