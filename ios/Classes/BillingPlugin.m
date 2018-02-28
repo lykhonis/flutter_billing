@@ -210,7 +210,7 @@
         [values setObject:product.localizedTitle forKey:@"title"];
         [values setObject:product.localizedDescription forKey:@"description"];
         [values setObject:product.priceLocale.currencyCode forKey:@"currency"];
-        [values setObject:product.price forKey:@"amount"];
+        [values setObject:[NSNumber numberWithInt:(int) product.price] forKey:@"amount"];
 
         [allValues addObject:values];
     }];

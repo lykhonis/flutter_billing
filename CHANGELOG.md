@@ -1,3 +1,6 @@
+## [0.1.3] - iOS Product Price Bug
+On iOS product price was passed as double to Dart code.
+
 ## [0.1.2] - iOS Simulator Support
 Skip a product if information is not fullfiled properly
 
