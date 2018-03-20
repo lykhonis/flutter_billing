@@ -14,7 +14,7 @@ EXTERNAL SOURCES:
     :path: /Users/Vladimir/Projects/github.com/flutter_billing/ios
 
 SPEC CHECKSUMS:
-  Flutter: d674e78c937094a75ac71dd77e921e840bea3dbf
+  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
   flutter_billing: 9f246559b5b788780dff78abe5c5998b8da2dae6
 
 PODFILE CHECKSUM: af9e3c39454c5c0747a209b7dc05c442964e0051

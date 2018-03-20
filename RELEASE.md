@@ -10,3 +10,4 @@ Version format is `v{major}.{minor}.{patch}`. e.g. `v0.1.1`.
 6. Do `git tag {version}`.
 7. Do `flutter packages pub publish --dry-run`. Check to ensure there are no warnings!
 8. Do `flutter packages pub publish` to publish new version.
+9. Push changes `git push && git push --tags`

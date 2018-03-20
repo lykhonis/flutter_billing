@@ -12,8 +12,7 @@ class BillingProduct {
     this.description,
     this.currency,
     this.amount,
-  })
-      : assert(identifier != null),
+  })  : assert(identifier != null),
         assert(price != null),
         assert(title != null),
         assert(description != null),
@@ -67,7 +66,7 @@ class BillingProduct {
 }
 
 /// A billing error callback to be called when any of billing operations fail.
-typedef void BillingErrorCallback(Exception e);
+typedef void BillingErrorCallback(Error e);
 
 /// Billing plugin to enable communication with billing API in iOS and Android.
 class Billing {
@@ -89,12 +88,10 @@ class Billing {
   /// error, it would return simply empty list.
   Future<List<BillingProduct>> getProducts(List<String> identifiers) {
     assert(identifiers != null);
-
     if (_cachedProducts.keys.toSet().containsAll(identifiers)) {
       return new Future.value(
           identifiers.map((identifier) => _cachedProducts[identifier]).toList());
     }
-
     return synchronized(this, () async {
       try {
         final Map<String, BillingProduct> products = new Map.fromIterable(
@@ -133,11 +130,10 @@ class Billing {
     if (_purchasesFetched) {
       return new Future.value(new Set.from(_purchasedProducts));
     }
-
     return synchronized(this, () async {
       try {
-        final List<String> purchases = await _channel.invokeMethod('fetchPurchases');
-        _purchasedProducts.addAll(purchases);
+        final List purchases = await _channel.invokeMethod('fetchPurchases');
+        _purchasedProducts.addAll(purchases.cast());
         _purchasesFetched = true;
         return _purchasedProducts;
       } catch (e) {
@@ -152,7 +148,6 @@ class Billing {
   /// Returns true if a product is purchased, otherwise false.
   Future<bool> isPurchased(String identifier) async {
     assert(identifier != null);
-
     final Set<String> purchases = await getPurchases();
     return purchases.contains(identifier);
   }
@@ -163,16 +158,13 @@ class Billing {
   /// Returns updated list of product identifiers that have been purchased.
   Future<bool> purchase(String identifier) {
     assert(identifier != null);
-
     if (_purchasedProducts.contains(identifier)) {
       return new Future.value(true);
     }
-
     return synchronized(this, () async {
       try {
-        final List<String> purchases =
-            await _channel.invokeMethod('purchase', {'identifier': identifier});
-        _purchasedProducts.addAll(purchases);
+        final List purchases = await _channel.invokeMethod('purchase', {'identifier': identifier});
+        _purchasedProducts.addAll(purchases.cast());
         return purchases.contains(identifier);
       } catch (e) {
         if (_onError != null) _onError(e);
