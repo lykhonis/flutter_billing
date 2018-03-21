@@ -1,3 +1,6 @@
+## 0.2.1
+* Report `Exception` instead of `Error` as per type in Dart 2
+
 ## 0.2.0
 * **Breaking change**. Dart 2 support
 

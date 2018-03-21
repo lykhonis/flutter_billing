@@ -66,7 +66,7 @@ class BillingProduct {
 }
 
 /// A billing error callback to be called when any of billing operations fail.
-typedef void BillingErrorCallback(Error e);
+typedef void BillingErrorCallback(Exception e);
 
 /// Billing plugin to enable communication with billing API in iOS and Android.
 class Billing {
