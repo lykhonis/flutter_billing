@@ -1,3 +1,6 @@
+## 0.2.2
+* Fix on iOS to return price in cents ($1.99 = 199)
+
 ## 0.2.1
 * Report `Exception` instead of `Error` as per type in Dart 2
 
