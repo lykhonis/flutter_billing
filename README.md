@@ -12,7 +12,7 @@ testing has been limited.
 [Pull Requests](https://github.com/VolodymyrLykhonis/flutter_billing/pulls) are welcome.
 
 ## Using
-Add `flutter_billing: 0.2.2` as a dependency in `pubspec.yaml`.
+Add [![flutter_billing](https://img.shields.io/pub/v/flutter_billing.svg)](https://pub.dartlang.org/packages/flutter_billing) as a dependency in `pubspec.yaml`.
 
 Create an instance of the plugin:
 ```dart
