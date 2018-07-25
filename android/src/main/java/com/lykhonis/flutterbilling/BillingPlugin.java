@@ -16,8 +16,10 @@ import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
 import com.android.billingclient.api.SkuDetailsResponseListener;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +33,15 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 public final class BillingPlugin implements MethodCallHandler {
     private final String TAG = BillingPlugin.class.getSimpleName();
 
+    private enum BillingServiceStatus {
+        IDLE, STARTING, READY
+    }
+
     private final Activity activity;
     private final BillingClient billingClient;
     private final Map<String, Result> pendingPurchaseRequests;
-    private boolean billingServiceConnected;
+    private final Deque<Request> pendingRequests;
+    private BillingServiceStatus billingServiceStatus;
 
     public static void registerWith(Registrar registrar) {
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_billing");
@@ -45,6 +52,8 @@ public final class BillingPlugin implements MethodCallHandler {
         this.activity = activity;
 
         pendingPurchaseRequests = new HashMap<>();
+        pendingRequests = new ArrayDeque<>();
+        billingServiceStatus = BillingServiceStatus.IDLE;
 
         billingClient = BillingClient.newBuilder(activity)
                                      .setListener(new BillingListener())
@@ -63,7 +72,7 @@ public final class BillingPlugin implements MethodCallHandler {
             }
         });
 
-        startServiceConnection(new Request() {
+        executeServiceRequest(new Request() {
             @Override
             public void execute() {
                 Log.d(TAG, "Billing service is ready.");
@@ -193,23 +202,27 @@ public final class BillingPlugin implements MethodCallHandler {
             Log.d(TAG, "Stopping billing service.");
 
             billingClient.endConnection();
-
-            billingServiceConnected = false;
+            billingServiceStatus = BillingServiceStatus.IDLE;
         }
     }
 
-    private void startServiceConnection(final Request request) {
+    private void startServiceConnection() {
+        if (billingServiceStatus != BillingServiceStatus.IDLE) return;
+        billingServiceStatus = BillingServiceStatus.STARTING;
         billingClient.startConnection(new BillingClientStateListener() {
             @Override
             public void onBillingSetupFinished(@BillingResponse int billingResponseCode) {
                 Log.d(TAG, "Billing service was setup with code " + billingResponseCode);
 
-                if (billingResponseCode == BillingResponse.OK) {
-                    billingServiceConnected = true;
+                billingServiceStatus = billingResponseCode == BillingResponse.OK ? BillingServiceStatus.READY : BillingServiceStatus.IDLE;
+                Request request;
 
-                    request.execute();
-                } else {
-                    request.failed();
+                while ((request = pendingRequests.poll()) != null) {
+                    if (billingServiceStatus == BillingServiceStatus.READY) {
+                        request.execute();
+                    } else {
+                        request.failed();
+                    }
                 }
             }
 
@@ -217,16 +230,17 @@ public final class BillingPlugin implements MethodCallHandler {
             public void onBillingServiceDisconnected() {
                 Log.d(TAG, "Billing service was disconnected!");
 
-                billingServiceConnected = false;
+                billingServiceStatus = BillingServiceStatus.IDLE;
             }
         });
     }
 
     private void executeServiceRequest(Request request) {
-        if (billingServiceConnected) {
+        if (billingServiceStatus == BillingServiceStatus.READY) {
             request.execute();
         } else {
-            startServiceConnection(request);
+            pendingRequests.add(request);
+            startServiceConnection();
         }
     }
 
@@ -252,6 +266,7 @@ public final class BillingPlugin implements MethodCallHandler {
 
     interface Request {
         void execute();
+
         void failed();
     }
 

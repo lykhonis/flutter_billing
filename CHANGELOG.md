@@ -1,3 +1,6 @@
+## 0.2.3
+* Fix on Android to queue up early requests prior billing client setup
+
 ## 0.2.2
 * Fix on iOS to return price in cents ($1.99 = 199)
 
