@@ -143,6 +143,14 @@ class Billing {
     });
   }
 
+  /// Grab in app receipt for iOS.
+  ///
+  /// Returns a String containing the receipt, validity should be check on (your) server side.
+  Future<String> getReceipt() async {
+    final String receipt = await _channel.invokeMethod('getReceipt');
+    return receipt;
+  }
+
   /// Validate if a product is purchased.
   ///
   /// Returns true if a product is purchased, otherwise false.
@@ -152,18 +160,15 @@ class Billing {
     return purchases.contains(identifier);
   }
 
-  /// Purchase a product.
+  /// Purchase a product. If it is a consumable, set consume to true. It will automatically consume it on Android, just after purchase!
   ///
   /// This would trigger platform UI to walk a user through steps of purchasing the product.
   /// Returns updated list of product identifiers that have been purchased.
-  Future<bool> purchase(String identifier) {
+  Future<bool> purchase(String identifier, [bool consume = false]) {
     assert(identifier != null);
-    if (_purchasedProducts.contains(identifier)) {
-      return new Future.value(true);
-    }
     return synchronized(this, () async {
       try {
-        final List purchases = await _channel.invokeMethod('purchase', {'identifier': identifier});
+        final List purchases = await _channel.invokeMethod('purchase', {'identifier': identifier, 'consume': consume});
         _purchasedProducts.addAll(purchases.cast());
         return purchases.contains(identifier);
       } catch (e) {
