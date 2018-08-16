@@ -12,3 +12,5 @@ pubspec.lock
 /assets/sketch/
 design
 out/
+
+*.orig
