@@ -11,6 +11,7 @@ import com.android.billingclient.api.BillingClient.FeatureType;
 import com.android.billingclient.api.BillingClient.SkuType;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
+import com.android.billingclient.api.ConsumeResponseListener;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
@@ -43,6 +44,8 @@ public final class BillingPlugin implements MethodCallHandler {
     private final Map<String, Result> pendingPurchaseRequests;
     private final Deque<Request> pendingRequests;
     private BillingServiceStatus billingServiceStatus;
+
+    private final List<String> consumeIds = new ArrayList<>();
 
     public static void registerWith(Registrar registrar) {
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "flutter_billing");
@@ -91,7 +94,7 @@ public final class BillingPlugin implements MethodCallHandler {
         if ("fetchPurchases".equals(methodCall.method)) {
             fetchPurchases(result);
         } else if ("purchase".equals(methodCall.method)) {
-            purchase(methodCall.<String>argument("identifier"), result);
+            purchase(methodCall.<String>argument("identifier"), methodCall.<Boolean>argument("consume"), result);
         } else if ("fetchProducts".equals(methodCall.method)) {
             fetchProducts(methodCall.<List<String>>argument("identifiers"), result);
         } else if ("fetchSubscriptions".equals(methodCall.method)) {
@@ -151,10 +154,22 @@ public final class BillingPlugin implements MethodCallHandler {
         return products;
     }
 
-    private void purchase(final String identifier, final Result result) {
+    final ConsumeResponseListener onConsumeListener = new ConsumeResponseListener() {
+        @Override
+        public void onConsumeResponse(@BillingResponse int responseCode, String purchaseToken) {
+
+          Log.d(TAG, "onConsumeResponse: " + responseCode);
+        }
+    }
+
+    private void purchase(final String identifier, final Boolean consume, final Result result) {
         executeServiceRequest(new Request() {
             @Override
             public void execute() {
+                
+                if (consume && !consumeIds.contains(identifier))
+                    consumeIds.add(identifier);
+
                 final int responseCode = billingClient.launchBillingFlow(
                         activity,
                         BillingFlowParams.newBuilder()
@@ -270,8 +285,15 @@ public final class BillingPlugin implements MethodCallHandler {
 
         final List<String> identifiers = new ArrayList<>(purchases.size());
 
+        Log.d(TAG, "fetchPurchases, trying to consume if necessary:");
+
         for (Purchase purchase : purchases) {
-            identifiers.add(purchase.getSku());
+            String sku = purchase.getSku();
+            identifiers.add(sku);
+            if (consumeIds.contains(sku)) {
+                billingClient.consumeAsync(purchase.getPurchaseToken(), onConsumeListener);
+                consumeIds.remove(sku);
+            }
         }
 
         return identifiers;

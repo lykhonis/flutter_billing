@@ -49,6 +49,8 @@
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
     if ([@"fetchPurchases" isEqualToString:call.method]) {
         [self fetchPurchases:result];
+    } else if ([@"getReceipt" isEqualToString:call.method]) {
+        [self getReceipt:result];
     } else if ([@"purchase" isEqualToString:call.method]) {
         NSString* identifier = (NSString*)call.arguments[@"identifier"];
         if (identifier != nil) {
@@ -66,6 +68,16 @@
     } else {
         result(FlutterMethodNotImplemented);
     }
+}
+
+- (void)getReceipt:(FlutterResult)result {
+    
+    NSData *dataReceipt = [NSData dataWithContentsOfURL:[[NSBundle mainBundle] appStoreReceiptURL]];
+    
+    if (!dataReceipt)
+        result([FlutterError errorWithCode:@"ERROR" message:@"No local receipt" details:nil]);
+    else
+        result([dataReceipt base64EncodedStringWithOptions:0]);
 }
 
 - (void)fetchPurchases:(FlutterResult)result {
