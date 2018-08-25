@@ -1,3 +1,8 @@
+## 0.2.4
+* Consumable products support for Android
+* Subscription support for Android
+* Receipt request support for iOS
+
 ## 0.2.3
 * Fix on Android to queue up early requests prior billing client setup
 
