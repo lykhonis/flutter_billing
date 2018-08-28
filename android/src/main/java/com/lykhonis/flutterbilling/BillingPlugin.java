@@ -154,7 +154,6 @@ public final class BillingPlugin implements MethodCallHandler {
         return products;
     }
 
-
     final ConsumeResponseListener onConsumeListener = new ConsumeResponseListener() {
         @Override
         public void onConsumeResponse(@BillingResponse int responseCode, String purchaseToken) {
