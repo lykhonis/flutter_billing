@@ -154,13 +154,14 @@ public final class BillingPlugin implements MethodCallHandler {
         return products;
     }
 
+
     final ConsumeResponseListener onConsumeListener = new ConsumeResponseListener() {
         @Override
         public void onConsumeResponse(@BillingResponse int responseCode, String purchaseToken) {
 
-          Log.d(TAG, "onConsumeResponse: " + responseCode);
+            Log.d(TAG, "onConsumeResponse: " + responseCode);
         }
-    }
+    };
 
     private void purchase(final String identifier, final Boolean consume, final Result result) {
         executeServiceRequest(new Request() {
@@ -263,7 +264,7 @@ public final class BillingPlugin implements MethodCallHandler {
                             @Override
                             public void onSkuDetailsResponse(int responseCode, List<SkuDetails> skuDetailsList) {
                                 if (responseCode == BillingResponse.OK) {
-                                    getProductsFromSkuDetails(skuDetailsList);
+                                    List<Map<String, Object>> products = getProductsFromSkuDetails(skuDetailsList);
 
                                     result.success(products);
                                 } else {
