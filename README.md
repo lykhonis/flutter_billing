@@ -60,4 +60,8 @@ final bool purchased = await billing.purchase(productId);
 ## Limitations
 This is just an initial version of the plugin. There are still some limitations:
 
-- Only non-consumable in app products are supported
+- ~~One time purchase products are not supported~~
+- ~~Consumable products are not supported~~
+- ~~Android subscription are not supported~~
+- ~~iOS receipt request is not supported~~
+- iOS subscriptions are not supported
