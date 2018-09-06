@@ -8,7 +8,7 @@ homepage: https://github.com/VolodymyrLykhonis/flutter_billing
 dependencies:
   flutter:
     sdk: flutter
-  synchronized: ^1.1.0
+  synchronized: ^1.5.1+1
 
 flutter:
   plugin:
