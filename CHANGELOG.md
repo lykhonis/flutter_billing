@@ -1,3 +1,6 @@
+## 0.2.5
+* Fix build issues of 0.2.4
+
 ## 0.2.4
 * Consumable products support for Android
 * Subscription support for Android
