@@ -71,13 +71,12 @@
 }
 
 - (void)getReceipt:(FlutterResult)result {
-    
     NSData *dataReceipt = [NSData dataWithContentsOfURL:[[NSBundle mainBundle] appStoreReceiptURL]];
-    
-    if (!dataReceipt)
-        result([FlutterError errorWithCode:@"ERROR" message:@"No local receipt" details:nil]);
-    else
+    if (!dataReceipt) {
+        result(@"");
+    } else {
         result([dataReceipt base64EncodedStringWithOptions:0]);
+    }
 }
 
 - (void)fetchPurchases:(FlutterResult)result {
@@ -121,10 +120,10 @@
     NSMutableArray<FlutterResult>* results = [[NSMutableArray alloc] init];
     
     [transactions enumerateObjectsUsingBlock:^(SKPaymentTransaction* transaction, NSUInteger idx, BOOL* stop) {
-        [purchases addObject:transaction.payment.productIdentifier];
-        FlutterResult result = [requestedPayments objectForKey:transaction.payment];
+        [self->purchases addObject:transaction.payment.productIdentifier];
+        FlutterResult result = [self->requestedPayments objectForKey:transaction.payment];
         if (result != nil) {
-            [requestedPayments removeObjectForKey:transaction.payment];
+            [self->requestedPayments removeObjectForKey:transaction.payment];
             [results addObject:result];
         }
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
@@ -140,7 +139,7 @@
     [transactions enumerateObjectsUsingBlock:^(SKPaymentTransaction* transaction, NSUInteger idx, BOOL* stop) {
         SKPaymentTransaction* original = transaction.originalTransaction;
         if (original != nil) {
-            [purchases addObject:original.payment.productIdentifier];
+            [self->purchases addObject:original.payment.productIdentifier];
         }
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
     }];
@@ -148,9 +147,9 @@
 
 - (void)failed:(NSArray<SKPaymentTransaction*>*)transactions {
     [transactions enumerateObjectsUsingBlock:^(SKPaymentTransaction* transaction, NSUInteger idx, BOOL* stop) {
-        FlutterResult result = [requestedPayments objectForKey:transaction.payment];
+        FlutterResult result = [self->requestedPayments objectForKey:transaction.payment];
         if (result != nil) {
-            [requestedPayments removeObjectForKey:transaction.payment];
+            [self->requestedPayments removeObjectForKey:transaction.payment];
             result([FlutterError errorWithCode:@"ERROR" message:@"Failed to make a payment!" details:nil]);
         }
         [[SKPaymentQueue defaultQueue] finishTransaction:transaction];
@@ -168,7 +167,7 @@
 
     if (product != nil) {
         SKPayment* payment = [SKPayment paymentWithProduct:product];
-        [requestedPayments setObject:result forKey:payment];
+        [self->requestedPayments setObject:result forKey:payment];
         [[SKPaymentQueue defaultQueue] addPayment:payment];
     } else {
         result([FlutterError errorWithCode:@"ERROR" message:@"Failed to make a payment!" details:nil]);
@@ -217,12 +216,17 @@
         }
 
         NSMutableDictionary<NSString*, id>* values = [[NSMutableDictionary alloc] init];
+        [values setObject:@"product" forKey:@"type"];
         [values setObject:product.productIdentifier forKey:@"identifier"];
         [values setObject:[currencyFormatter stringFromNumber:product.price] forKey:@"price"];
         [values setObject:product.localizedTitle forKey:@"title"];
         [values setObject:product.localizedDescription forKey:@"description"];
-        [values setObject:product.priceLocale.currencyCode forKey:@"currency"];
         [values setObject:[NSNumber numberWithInt:(int) ceil(product.price.doubleValue * 100)] forKey:@"amount"];
+        if (@available(iOS 10.0, *)) {
+            [values setObject:product.priceLocale.currencyCode forKey:@"currency"];
+        } else {
+             [values setObject:@"USD" forKey:@"currency"];
+        }
 
         [allValues addObject:values];
     }];

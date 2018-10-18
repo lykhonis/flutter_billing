@@ -1,13 +1,10 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/services.dart';
 import 'package:synchronized/synchronized.dart';
 
-enum BillingProductType
-{
-    INAPP,
-    SUBS
-}
+enum BillingProductType { product, subscription }
 
 /// A single product that can be purchased by a user in app.
 class BillingProduct {
@@ -45,14 +42,13 @@ class BillingProduct {
   /// Price in 100s. e.g. $2.49 equals 249.
   final int amount;
 
-  // Type of product. e.g. SUBS or INAPP
+  // Type of product.
   final BillingProductType type;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is BillingProduct &&
-          runtimeType == other.runtimeType &&
           identifier == other.identifier &&
           price == other.price &&
           title == other.title &&
@@ -62,19 +58,12 @@ class BillingProduct {
           type == other.type;
 
   @override
-  int get hashCode =>
-      identifier.hashCode ^
-      price.hashCode ^
-      title.hashCode ^
-      description.hashCode ^
-      currency.hashCode ^
-      amount.hashCode ^
-      type.hashCode;
+  int get hashCode => hashValues(identifier, price, title, description, currency, amount, type);
 
   @override
   String toString() {
-    return 'BillingProduct{sku: $identifier, price: $price, title: $title, '
-        'description: $description, currency: $currency, amount: $amount, type: $type}';
+    return '$runtimeType(sku: $identifier, price: $price, title: $title, '
+        'description: $description, currency: $currency, amount: $amount, type: $type)';
   }
 }
 
@@ -88,9 +77,9 @@ class Billing {
   Billing({BillingErrorCallback onError}) : _onError = onError;
 
   final BillingErrorCallback _onError;
-  final Map<String, BillingProduct> _cachedProducts = new Map();
-  final Set<String> _purchasedProducts = new Set();
-  final Set<String> _subscribedProducts = new Set();
+  final _lock = Lock();
+  final _cachedProducts = <String, BillingProduct>{};
+  final _purchasedProducts = Set<String>();
   bool _purchasesFetched = false;
 
   /// Products details of supplied product identifiers.
@@ -101,24 +90,39 @@ class Billing {
   /// of error, while iOS would return a list of only products that are available. In a case of
   /// error, it would return simply empty list.
   Future<List<BillingProduct>> getProducts(List<String> identifiers) {
+    return _fetch(method: 'fetchProducts', identifiers: identifiers);
+  }
+
+  /// Products details of supplied product identifiers.
+  ///
+  /// Returns a list of products available to the app for subscription.
+  ///
+  /// Note the behavior may differ from iOS and Android. Android most likely to throw in a case
+  /// of error, while iOS would return a list of only products that are available. In a case of
+  /// error, it would return simply empty list.
+  Future<List<BillingProduct>> getSubscriptions(List<String> identifiers) {
+    return _fetch(method: 'fetchSubscriptions', identifiers: identifiers);
+  }
+
+  Future<List<BillingProduct>> _fetch({String method, List<String> identifiers}) {
+    assert(method != null);
     assert(identifiers != null);
     if (_cachedProducts.keys.toSet().containsAll(identifiers)) {
-      return new Future.value(
-          identifiers.map((identifier) => _cachedProducts[identifier]).toList());
+      return Future.value(identifiers.map((identifier) => _cachedProducts[identifier]).toList());
     }
-    return synchronized(this, () async {
+    return _lock.synchronized(() async {
       try {
-        final Map<String, BillingProduct> products = new Map.fromIterable(
-          await _channel.invokeMethod('fetchProducts', {'identifiers': identifiers}),
+        final products = Map.fromIterable(
+          await _channel.invokeMethod(method, {'identifiers': identifiers}),
           key: (product) => product['identifier'],
-          value: (product) => new BillingProduct(
+          value: (product) => BillingProduct(
                 identifier: product['identifier'],
                 price: product['price'],
                 title: product['title'],
                 description: product['description'],
                 currency: product['currency'],
                 amount: product['amount'],
-                type: product['type'],
+                type: _getProductType(product['type']),
               ),
         );
         _cachedProducts.addAll(products);
@@ -130,48 +134,17 @@ class Billing {
     });
   }
 
-  /// Products details of supplied product identifiers.
-  ///
-  /// Returns a list of products available to the app for subscription.
-  ///
-  /// Note the behavior may differ from iOS and Android. Android most likely to throw in a case
-  /// of error, while iOS would return a list of only products that are available. In a case of
-  /// error, it would return simply empty list.
-  Future<List<BillingProduct>> getSubscriptions(List<String> identifiers) {
-    assert(identifiers != null);
-    if (_cachedProducts.keys.toSet().containsAll(identifiers)) {
-      return new Future.value(
-          identifiers.map((identifier) => _cachedProducts[identifier]).toList());
-    }
-    return synchronized(this, () async {
-      try {
-        final Map<String, BillingProduct> products = new Map.fromIterable(
-          await _channel.invokeMethod('fetchSubscriptions', {'identifiers': identifiers}),
-          key: (product) => product['identifier'],
-          value: (product) => new BillingProduct(
-            identifier: product['identifier'],
-            price: product['price'],
-            title: product['title'],
-            description: product['description'],
-            currency: product['currency'],
-            amount: product['amount'],
-            type: product['type'],
-          ),
-        );
-        _cachedProducts.addAll(products);
-        return products.values.toList();
-      } catch (e) {
-        if (_onError != null) _onError(e);
-        return <BillingProduct>[];
-      }
-    });
+  BillingProductType _getProductType(String type) {
+    if (type == 'product') return BillingProductType.product;
+    if (type == 'subscription') return BillingProductType.subscription;
+    throw ArgumentError('Unsupported product type: $type');
   }
 
   /// Product details of supplied product identifier.
   ///
   /// Returns a product details or null if one is not available or error occurred.
   Future<BillingProduct> getProduct(String identifier) async {
-    final List<BillingProduct> products = await getProducts(<String>[identifier]);
+    final products = await getProducts(<String>[identifier]);
     return products.firstWhere((product) => product.identifier == identifier, orElse: () => null);
   }
 
@@ -180,9 +153,9 @@ class Billing {
   /// Returns products identifiers that are already purchased.
   Future<Set<String>> getPurchases() {
     if (_purchasesFetched) {
-      return new Future.value(new Set.from(_purchasedProducts));
+      return Future.value(Set.from(_purchasedProducts));
     }
-    return synchronized(this, () async {
+    return _lock.synchronized(() async {
       try {
         final List purchases = await _channel.invokeMethod('fetchPurchases');
         _purchasedProducts.addAll(purchases.cast());
@@ -190,7 +163,7 @@ class Billing {
         return _purchasedProducts;
       } catch (e) {
         if (_onError != null) _onError(e);
-        return new Set.identity();
+        return Set.identity();
       }
     });
   }
@@ -198,6 +171,7 @@ class Billing {
   /// Grab in app receipt for iOS.
   ///
   /// Returns a String containing the receipt, validity should be check on (your) server side.
+  /// If receipt is unavailable or a call is made on Android it returns empty string.
   Future<String> getReceipt() async {
     final String receipt = await _channel.invokeMethod('getReceipt');
     return receipt;
@@ -208,7 +182,7 @@ class Billing {
   /// Returns true if a product is purchased, otherwise false.
   Future<bool> isPurchased(String identifier) async {
     assert(identifier != null);
-    final Set<String> purchases = await getPurchases();
+    final purchases = await getPurchases();
     return purchases.contains(identifier);
   }
 
@@ -216,18 +190,8 @@ class Billing {
   ///
   /// This would trigger platform UI to walk a user through steps of purchasing the product.
   /// Returns updated list of product identifiers that have been purchased.
-  Future<bool> purchase(String identifier, [bool consume = false]) {
-    assert(identifier != null);
-    return synchronized(this, () async {
-      try {
-        final List purchases = await _channel.invokeMethod('purchase', {'identifier': identifier, 'consume': consume});
-        _purchasedProducts.addAll(purchases.cast());
-        return purchases.contains(identifier);
-      } catch (e) {
-        if (_onError != null) _onError(e);
-        return false;
-      }
-    });
+  Future<bool> purchase(String identifier, {bool consume: false}) {
+    return _purchase(method: 'purchase', identifier: identifier, consume: consume);
   }
 
   /// Subscribe to a product.
@@ -235,21 +199,28 @@ class Billing {
   /// This would trigger platform UI to walk a user through steps of subscribing to the product.
   /// Returns updated list of product identifiers that have been subscribed to.
   Future<bool> subscribe(String identifier) {
+    return _purchase(method: 'subscribe', identifier: identifier);
+  }
+
+  Future<bool> _purchase({String method, String identifier, bool consume: false}) {
+    assert(method != null);
+    assert(consume != null);
     assert(identifier != null);
-    if (_subscribedProducts.contains(identifier)) {
-      return new Future.value(true);
+    if (_purchasedProducts.contains(identifier)) {
+      return Future.value(true);
     }
-    return synchronized(this, () async {
+    return _lock.synchronized(() async {
       try {
-        final List subscriptions = await _channel.invokeMethod('subscribe', {'identifier': identifier});
-        _subscribedProducts.addAll(subscriptions.cast());
+        final List subscriptions = await _channel.invokeMethod(method, {
+          'identifier': identifier,
+          'consume': consume,
+        });
+        _purchasedProducts.addAll(subscriptions.cast());
         return subscriptions.contains(identifier);
       } catch (e) {
         if (_onError != null) _onError(e);
-        print(e.toString());
         return false;
       }
     });
   }
-
 }
