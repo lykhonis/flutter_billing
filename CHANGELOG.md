@@ -1,3 +1,6 @@
+## 0.3.0
+* Fixes of product types and type system of dart
+
 ## 0.2.5
 * Fix build issues of 0.2.4
 
