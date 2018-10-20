@@ -68,7 +68,7 @@ class BillingProduct {
 }
 
 /// A billing error callback to be called when any of billing operations fail.
-typedef void BillingErrorCallback(Exception e);
+typedef void BillingErrorCallback(dynamic e);
 
 /// Billing plugin to enable communication with billing API in iOS and Android.
 class Billing {
@@ -112,7 +112,7 @@ class Billing {
     }
     return _lock.synchronized(() async {
       try {
-        final products = Map.fromIterable(
+        final products = Map<String, BillingProduct>.fromIterable(
           await _channel.invokeMethod(method, {'identifiers': identifiers}),
           key: (product) => product['identifier'],
           value: (product) => BillingProduct(
