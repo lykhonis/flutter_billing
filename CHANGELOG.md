@@ -1,3 +1,7 @@
+## 0.4.0
+* Upgrade `synchronized` to 2.1.0
+* Upgrade to Flutter 1.6.6
+
 ## 0.3.0
 * Fixes of product types and type system of dart
 
