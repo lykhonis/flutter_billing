@@ -177,6 +177,14 @@ class Billing {
     return receipt;
   }
 
+  //  Get Transaction ID, after success purchase payment
+  //
+  // Returns a String unique ID from purchased success. this is tested for iOS payment.
+  Future<String> getTransactionID() async {
+    final String transactionID = await _channel.invokeMethod('getTransactionID');
+    return transactionID;
+  }
+
   /// Validate if a product is purchased.
   ///
   /// Returns true if a product is purchased, otherwise false.
