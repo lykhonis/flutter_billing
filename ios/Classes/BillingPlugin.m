@@ -19,6 +19,7 @@
 @synthesize products;
 @synthesize purchases;
 @synthesize channel;
+NSString *transactionID;
 
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
     BillingPlugin* instance = [[BillingPlugin alloc] init];
@@ -65,6 +66,8 @@
         } else {
             result([FlutterError errorWithCode:@"ERROR" message:@"Invalid or missing arguments!" details:nil]);
         }
+    } else if ([@"getTransactionID" isEqualToString:call.method]) {
+        [self getTransactionID:result];
     } else {
         result(FlutterMethodNotImplemented);
     }
@@ -79,6 +82,14 @@
     }
 }
 
+- (void)getTransactionID:(FlutterResult)result {
+    if (transactionID != NULL) {
+        result(transactionID);
+    } else {
+        result(@"");
+    }
+}
+
 - (void)fetchPurchases:(FlutterResult)result {
     [fetchPurchases addObject:result];
     [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
@@ -86,6 +97,7 @@
 
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray<SKPaymentTransaction *> *)transactions {
     [self purchased:[transactions filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(SKPaymentTransaction* transaction, NSDictionary* bindings) {
+        transactionID = transaction.transactionIdentifier;
         return [transaction transactionState] == SKPaymentTransactionStatePurchased;
     }]]];
     [self restored:[transactions filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(SKPaymentTransaction* transaction, NSDictionary* bindings) {
